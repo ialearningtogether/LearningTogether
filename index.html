@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEARNING TOGETHER | Aprendiendo Juntos IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4Cg+aRz/2gqS4p7/r8Z4m5cK5Q8KjA5l5O4n4o4F5d5Rz9xR5xR5t5Q==	" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* CRÍTICO: Asegura que los saltos de línea (\n) se muestren correctamente para el Chat de AURA y Quiz */
+        .chat-message-ai p:last-child {
+            white-space: pre-wrap; 
+        }
+        /* Aplicar la fuente Inter a todo el cuerpo */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* CSS personalizado para la imagen de fondo y el efecto Hero */
+        #hero {
+            /* NOTA: Usar una URL de placeholder para la imagen del profesor, 
+               ya que las imágenes locales no se cargan en este entorno. */
+            background-image: url('IA.jpg'); 
+            background-size: cover;
+            background-position: center;
+            /* Se mantiene el filtro oscuro (multiplicar) para que el texto sea legible */
+            background-blend-mode: multiply;
+            background-color: rgba(0, 0, 0, 0.4); 
+        }
+
+        /* Estilo para el botón flotante del Asistente IA (AURA) */
+        #aura-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100; 
+            transition: transform 0.3s ease-in-out;
+            width: 70px; 
+            height: 70px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0; 
+            border-radius: 50%;
+            background-color: #6d28d9; 
+            overflow: hidden; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        #aura-button img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; 
+            border-radius: 50%;
+        }
+        #aura-button:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Estilo para las secciones de características */
+        .feature-card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Estilo para el botón flotante de WhatsApp */
+        #whatsapp-button {
+            position: fixed;
+            bottom: 100px; 
+            right: 20px;
+            z-index: 110; 
+            transition: transform 0.3s ease-in-out;
+            padding: 0; 
+            background-color: transparent; 
+            box-shadow: none; 
+            width: 60px; 
+            height: 60px;
+            border-radius: 50%; 
+        }
+        #whatsapp-button:hover {
+            transform: scale(1.1);
+        }
+        #whatsapp-button img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
+        }
+
+        /* Estilo para la tarjeta de cursos con imagen */
+        .course-card img {
+            height: 150px; /* Altura fija para la imagen */
+            object-fit: cover; /* Asegura que la imagen cubra el área sin distorsionarse */
+            border-radius: 0.5rem 0.5rem 0 0; /* Solo bordes superiores redondeados */
+        }
+
+        /* Estilo para el modal de Notificación/Confirmación (Reemplazo de alert/confirm) */
+        #notificationModal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        /* Estilo para el botón de registro deshabilitado */
+        .btn-registered {
+            background-color: #10b981 !important; /* Esmeralda */
+            cursor: default;
+            pointer-events: none;
+        }
+        
+        /* --- ESTILOS CRÍTICOS DEL CHAT (BURBUJAS) --- */
+        .chat-message {
+            max-width: 85%; /* Limita el ancho de las burbujas */
+            padding: 10px 14px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .chat-message.user {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            align-self: flex-end; /* Alinea a la derecha */
+            margin-left: auto;
+            border-bottom-right-radius: 2px;
+        }
+        .chat-message.ai {
+            background-color: #ede9fe; /* violet-100 */
+            color: #1f2937; /* gray-800 */
+            align-self: flex-start; /* Alinea a la izquierda */
+            margin-right: auto;
+            border-bottom-left-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Sección de Dashboard (Nuevo: Visible solo cuando el usuario está autenticado) -->
+    <section id="user-dashboard" class="bg-indigo-700 text-white py-3 px-4 md:px-8 hidden">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm">
+            <div id="welcome-message">
+                <i class="fas fa-gem mr-2"></i> ¡Bienvenido! Tu progreso cuenta.
+            </div>
+            <div class="flex space-x-6 mt-2 md:mt-0">
+                <div class="flex items-center">
+                    <i class="fas fa-star text-yellow-300 mr-1"></i> Puntos: <span id="dashboard-points" class="font-bold ml-1">0</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-calendar-check text-green-300 mr-1"></i> Citas Agendadas: <span id="dashboard-appointments" class="font-bold ml-1">0</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Hero Minimalista -->
+    <header id="hero" class="h-screen flex items-center justify-center text-white p-4">
+        <div class="text-center max-w-4xl">
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-4 animate-pulse">
+                Aprendiendo Juntos
+            </h1>
+            <p class="text-xl md:text-2xl mb-8 font-light">
+                Impulsa tu carrera con **Inteligencia Artificial y Tecnología** de la mano de expertos.
+            </p>
+
+            <div class="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
+                <!-- ID para identificar el botón de registro y actualizarlo si ya se registró -->
+                <button id="registerButton" onclick="openModal('registerModal')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
+                    <i class="fas fa-user-plus mr-2"></i> Regístrate Ahora
+                </button>
+                <button onclick="openModal('interestsModal')" class="bg-white text-blue-600 hover:bg-gray-100 font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
+                    <i class="fas fa-search mr-2"></i> Descubre tus Intereses
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sección de Características Clave (Visión, Misión, Contactos) -->
+    <section id="features" class="py-16 px-4 md:px-8">
+        <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">¿Por Qué Elegir LEARNING TOGETHER?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+
+            <div class="feature-card bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-blue-500">
+                <i class="fas fa-lightbulb text-5xl text-blue-600 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Nuestra Visión</h3>
+                <p class="text-gray-600">Ser la plataforma líder en educación tecnológica, utilizando la IA como herramienta principal y como objeto de estudio.</p>
+            </div>
+
+            <div class="feature-card bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-blue-500">
+                <i class="fas fa-rocket text-5xl text-blue-600 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Nuestra Misión</h3>
+                <p class="text-gray-600">Democratizar el conocimiento de la IA, haciéndolo accesible y aplicable para todos a través de una experiencia de aprendizaje personalizada.</p>
+            </div>
+
+            <div class="feature-card bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-blue-500">
+                <i class="fas fa-headset text-5xl text-blue-600 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Contacto y Soporte</h3>
+                <p class="text-gray-600 mb-4">Agenda una asesoría personalizada o resuelve tus dudas con nuestro equipo.</p>
+                <button onclick="openModal('appointmentModal')" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full transition duration-300">
+                    <i class="fas fa-calendar-alt mr-2"></i> Agendar Cita
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Cursos con Imágenes Actualizada -->
+    <section id="courses" class="py-16 px-4 md:px-8 bg-blue-50">
+        <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">🎓 Cursos de Inteligencia Artificial</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+
+            <!-- Curso 1: Introducción a la Inteligencia Artificial -->
+            <div class="course-card bg-white rounded-lg shadow-xl hover:shadow-2xl transition duration-300 overflow-hidden">
+                <!-- Imagen 1: ia3.jpg (Robot con chat bubbles) -->
+                <img src="ia3.jpg" onerror="this.onerror=null; this.src='https://placehold.co/600x400/1e40af/ffffff?text=Introducción+a+IA';" alt="Introducción a la Inteligencia Artificial" class="w-full">
+                <div class="p-5">
+                    <i class="fas fa-brain text-4xl text-blue-600 mb-2"></i>
+                    <h3 class="text-xl font-semibold mb-2">Introducción a la IA</h3>
+                    <p class="text-gray-600 text-sm">Comprende los conceptos clave y el impacto de la Inteligencia Artificial en el mundo moderno.</p>
+                    <a href="https://www.elementsofai.com/es/" target="_blank" 
+                    class="block text-center mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded-lg transition duration-300">
+                        Ver Curso <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Curso 2: Fundamentos de Machine Learning -->
+            <div class="course-card bg-white rounded-lg shadow-xl hover:shadow-2xl transition duration-300 overflow-hidden">
+                <!-- Imagen 2: ia2.jpg (Rostro de robot con circuitos) -->
+                <img src="ia2.jpg" onerror="this.onerror=null; this.src='https://placehold.co/600x400/8b5cf6/ffffff?text=Machine+Learning';" alt="Fundamentos de Machine Learning" class="w-full">
+                <div class="p-5">
+                    <i class="fas fa-robot text-4xl text-purple-600 mb-2"></i>
+                    <h3 class="text-xl font-semibold mb-2">Fundamentos de ML</h3>
+                    <p class="text-gray-600 text-sm">Explora los algoritmos y modelos de aprendizaje automático desde cero.</p>
+                    <a href="https://developers.google.com/machine-learning?hl=es-419" target="_blank" 
+                    class="block text-center mt-4 w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 rounded-lg transition duration-300">
+                        Ver Curso <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Curso 3: Chatbots con IA: Cómo funcionan -->
+            <div class="course-card bg-white rounded-lg shadow-xl hover:shadow-2xl transition duration-300 overflow-hidden">
+                <!-- Imagen 3: ia1.jpg (Robot bebé con audífonos) -->
+                <img src="ia1.jpg" onerror="this.onerror=null; this.src='https://placehold.co/600x400/f59e0b/ffffff?text=Chatbots';" alt="Chatbots con IA" class="w-full">
+                <div class="p-5">
+                    <i class="fas fa-comments text-4xl text-yellow-600 mb-2"></i>
+                    <h3 class="text-xl font-semibold mb-2">Chatbots con IA</h3>
+                    <p class="text-gray-600 text-sm">Aprende a diseñar, entrenar e implementar asistentes conversacionales inteligentes.</p>
+                    <a href="https://cloud.google.com/use-cases/ai-chatbot?hl=es-419" target="_blank" 
+                    class="block text-center mt-4 w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 rounded-lg transition duration-300">
+                        Ver Curso <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Curso 4: Prompt Engineering Básica -->
+            <div class="course-card bg-white rounded-lg shadow-xl hover:shadow-2xl transition duration-300 overflow-hidden">
+                <!-- Imagen 4: ia4.jpg (Mano en laptop con íconos de IA) -->
+                <img src="ia4.jpg" onerror="this.onerror=null; this.src='https://placehold.co/600x400/dc2626/ffffff?text=Prompt+Engineering';" alt="Prompt Engineering" class="w-full">
+                <div class="p-5">
+                    <i class="fas fa-keyboard text-4xl text-red-600 mb-2"></i>
+                    <h3 class="text-xl font-semibold mb-2">Prompt Engineering</h3>
+                    <p class="text-gray-600 text-sm">Domina el arte de comunicarte con la IA para obtener resultados precisos y creativos.</p>
+                    <a href="https://grow.google/prompting-essentials/" target="_blank" 
+                    class="block text-center mt-4 w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 rounded-lg transition duration-300">
+                        Ver Curso <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+        
+        <!-- Botón para Producción Audiovisual -->
+        <div class="text-center mt-12">
+            <button onclick="openModal('videoModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-10 rounded-full shadow-xl transition duration-300 ease-in-out transform hover:scale-105">
+                <i class="fas fa-video mr-2"></i> Generar Video Resumen IA
+            </button>
+        </div>
+    </section>
+
+    <!-- Sección de Comunidad y Foro Global (NUEVO) -->
+    <section id="community" class="py-16 px-4 md:px-8 bg-gray-100">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800"><i class="fas fa-users-line mr-2"></i> Comunidad de Aprendizaje (Foro Global)</h2>
+            
+            <div class="bg-white rounded-xl shadow-xl p-6">
+                <h3 class="text-xl font-semibold mb-4 text-purple-700">Preguntas y Debates</h3>
+                
+                <!-- Contenedor de Mensajes del Foro -->
+                <div id="forum-posts" class="space-y-4 overflow-y-auto h-96 p-2 mb-4 border border-gray-200 rounded-lg bg-gray-50">
+                    <!-- Los mensajes del foro se cargarán aquí con onSnapshot -->
+                    <p class="text-center text-gray-400 mt-16">Cargando mensajes del foro...</p>
+                </div>
+
+                <!-- Formulario para Nuevo Mensaje -->
+                <form id="forum-form" onsubmit="submitForumPost(event)">
+                    <textarea id="forum-input" rows="3" placeholder="Escribe tu pregunta o comentario para la comunidad..." required class="w-full border border-gray-300 rounded-lg p-3 resize-none focus:ring-purple-500 focus:border-purple-500"></textarea>
+                    <div class="mt-3 flex justify-end">
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-lg transition duration-300">
+                            <i class="fas fa-comment-dots mr-2"></i> Publicar en el Foro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Botón Flotante de WhatsApp -->
+    <a href="https://wa.me/525521826137?text=Hola,%20quisiera%20saber%20más%20sobre%20Learning%20Together" target="_blank" id="whatsapp-button" class="transition duration-300 transform hover:scale-110">
+        <!-- NOTA: Se usa un placeholder para el icono de WhatsApp por ser un recurso externo -->
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Icon" class="w-full h-full object-contain"> 
+    </a>
+    
+    <!-- Botón Flotante del Asistente IA (AURA) -->
+    <button id="aura-button" onclick="openModal('auraModal')" class="transition duration-300">
+        <!-- NOTA: Se usa un placeholder para la imagen de AURA por ser un recurso externo -->
+        <img src="https://placehold.co/70x70/6d28d9/ffffff?text=IA" alt="Asistente IA Tutor" title="Asistente IA Tutor AURA">
+    </button>
+    
+
+    <!-- Pie de Página (Footer) -->
+    <footer class="bg-gray-800 text-white py-8 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
+            <p class="mb-4 md:mb-0 text-gray-400">&copy; 2025 LEARNING TOGETHER. Todos los derechos reservados.</p>
+            <div class="flex space-x-6">
+                <a href="https://www.facebook.com/profile.php?id=61583437227107" class="text-gray-400 hover:text-blue-400 transition duration-300" aria-label="Facebook"><i class="fab fa-facebook-f text-xl"></i></a>
+                <a href="https://x.com/ialearningtoget" class="text-gray-400 hover:text-blue-400 transition duration-300" aria-label="Twitter"><i class="fab fa-twitter text-xl"></i></a>
+                <a href="https://www.linkedin.com/in/learning-together-05a3b1391/" class="text-gray-400 hover:text-blue-400 transition duration-300" aria-label="LinkedIn"><i class="fab fa-linkedin-in text-xl"></i></a>
+                <a href="https://www.instagram.com/learningtogetheria/" class="text-gray-400 hover:text-blue-400 transition duration-300" aria-label="Instagram"><i class="fab fa-instagram text-xl"></i></a>
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- Modal de Registro de Usuario -->
+    <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50" onclick="closeModal(event, 'registerModal')">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+            <h3 class="text-2xl font-bold mb-4 text-blue-600">Registro de Usuario</h3>
+            <p class="mb-4">Ingresa tus datos para empezar tu viaje con la IA.</p>
+            <form id="registrationForm" onsubmit="handleFormSubmit(event, 'Registro', 'registerModal')">
+                <div class="mb-4">
+                    <label for="reg-name" class="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                    <input type="text" id="reg-name" name="name" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label for="reg-email" class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
+                    <input type="email" id="reg-email" name="email" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500">
+                    <p id="email-error" class="text-sm text-red-600 mt-1 hidden">Por favor, introduce un correo válido.</p>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal(null, 'registerModal')" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                        <i class="fas fa-paper-plane mr-2"></i> Enviar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Intereses Educativos -->
+    <div id="interestsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50" onclick="closeModal(event, 'interestsModal')">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+            <h3 class="text-2xl font-bold mb-4 text-blue-600">Selecciona tus Intereses</h3>
+            <p class="mb-4">Ayúdanos a recomendarte el mejor camino:</p>
+            <div class="space-y-3">
+                <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-blue-50">
+                    <input type="checkbox" name="interest" value="IA Basica" class="form-checkbox text-blue-600 h-5 w-5 rounded focus:ring-blue-500">
+                    <span class="text-gray-700 font-medium">Introducción a la Inteligencia Artificial</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-blue-50">
+                    <input type="checkbox" name="interest" value="Machine Learning" class="form-checkbox text-blue-600 h-5 w-5 rounded focus:ring-blue-500">
+                    <span class="text-gray-700 font-medium">Fundamentos de Machine Learning</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-blue-50">
+                    <input type="checkbox" name="interest" value="Chatbots" class="form-checkbox text-blue-600 h-5 w-5 rounded focus:ring-blue-500">
+                    <span class="text-gray-700 font-medium">Creación de Chatbots con IA</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-blue-50">
+                    <input type="checkbox" name="interest" value="Prompt Engineering" class="form-checkbox text-blue-600 h-5 w-5 rounded focus:ring-blue-500">
+                    <span class="text-gray-700 font-medium">Prompt Engineering Básica</span>
+                </label>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button type="button" onclick="closeModal(null, 'interestsModal'); showNotification('Intereses guardados.', 'info')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                    <i class="fas fa-check mr-2"></i> Guardar y Continuar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agendar Asesoría (Simulación Make) -->
+    <div id="appointmentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50" onclick="closeModal(event, 'appointmentModal')">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+            <h3 class="text-2xl font-bold mb-4 text-green-600">Agendar Asesoría Personalizada</h3>
+            <p class="mb-4">Completa el formulario para recibir una confirmación de cita (Simulación de conexión con **Make**).</p>
+            <form id="appointmentForm" onsubmit="handleFormSubmit(event, 'Cita', 'appointmentModal')">
+                <div class="mb-4">
+                    <label for="app-name" class="block text-sm font-medium text-gray-700">Nombre</label>
+                    <input type="text" id="app-name" name="name" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div class="mb-4">
+                    <label for="app-email" class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
+                    <input type="email" id="app-email" name="email" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div class="mb-4">
+                    <label for="app-topic" class="block text-sm font-medium text-gray-700">Tema de Interés</label>
+                    <select id="app-topic" name="topic" required class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-green-500 focus:border-green-500">
+                        <option value="">Selecciona un Tema</option>
+                        <option value="Introduccion a IA">Introducción a IA</option>
+                        <option value="Fundamentos ML">Fundamentos de ML</option>
+                        <option value="Asistencia Chatbot">Asistencia con Chatbots</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="openConfirmationModal('appointmentForm')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300">
+                        <i class="fas fa-calendar-check mr-2"></i> Confirmar Cita
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal del Asistente IA Tutor (AURA) - ADAPTADO PARA GEMINI -->
+    <div id="auraModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50" onclick="closeModal(event, 'auraModal')">
+        <div class="bg-white rounded-lg w-full max-w-lg shadow-2xl relative" onclick="event.stopPropagation()">
+            <div class="p-4 border-b flex justify-between items-center bg-purple-600 rounded-t-lg text-white">
+                <h3 class="text-xl font-bold"><i class="fas fa-chalkboard-teacher mr-2"></i> Asistente IA Tutor AURA</h3>
+                <button onclick="closeModal(null, 'auraModal')" class="text-white hover:text-gray-200 text-2xl font-bold">&times;</button>
+            </div>
+            <div id="aura-modal-content" class="p-4 flex flex-col" style="height: 60vh;">
+                <!-- Contenedor de Mensajes del Chat -->
+                <div id="chat-messages" class="space-y-4 flex flex-col flex-grow overflow-y-auto">
+                    <!-- Mensaje inicial de AURA -->
+                    <div class="chat-message ai">
+                        <p class="font-semibold text-purple-700 mb-1">AURA:</p>
+                        <p>¡Hola! Soy tu Asistente IA. Hazme cualquier pregunta sobre IA, Machine Learning, o Prompt Engineering.</p>
+                    </div>
+                </div>
+
+                <!-- Indicador de Carga (Spinning Loader) -->
+                <div id="chat-loading" class="text-center py-2 text-gray-500 hidden">
+                    <div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
+                    <span class="ml-2">AURA está pensando...</span>
+                </div>
+            </div>
+            <div class="p-4 border-t">
+                <div class="flex space-x-2">
+                    <input type="text" id="user-input" placeholder="Escribe tu pregunta..." class="flex-grow border border-gray-300 rounded-full p-3 focus:ring-purple-500 focus:border-purple-500" onkeydown="if(event.key === 'Enter') sendMessage()">
+                    <button onclick="sendMessage()" class="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-full transition duration-300" title="Enviar Mensaje">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <!-- Botón de Voz (Simulado) -->
+                    <button id="voice-button" onclick="toggleVoiceInput()" class="bg-gray-400 hover:bg-gray-500 text-white p-3 rounded-full transition duration-300" title="Activar Micrófono">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
+                <p id="voice-status" class="text-sm text-center text-gray-500 mt-2 hidden">Haz clic en el micrófono para hablar.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NUEVO Modal de Producción Audiovisual (Criterio 4) -->
+    <div id="videoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50" onclick="closeModal(event, 'videoModal')">
+        <div class="bg-white rounded-lg p-6 w-full max-w-xl shadow-2xl" onclick="event.stopPropagation()">
+            <h3 class="text-2xl font-bold mb-4 text-indigo-600"><i class="fas fa-magic mr-2"></i> Producción Audiovisual IA</h3>
+            <p class="mb-4 text-gray-700">Aquí puedes generar infografías, clips personalizados y tu video resumen final del curso utilizando nuestra IA.</p>
+            
+            <div class="space-y-4">
+                
+                <div class="border p-4 rounded-lg bg-indigo-50">
+                    <label for="video-topic" class="block text-lg font-medium text-indigo-700 mb-2">Tema para el Video Resumen:</label>
+                    <select id="video-topic" name="video-topic" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Selecciona el curso a resumir</option>
+                        <option value="Introduccion a IA">Introducción a la IA (Resumen Final)</option>
+                        <option value="Fundamentos ML">Fundamentos de ML (Resumen Final)</option>
+                        <option value="Chatbots">Chatbots con IA (Resumen Final)</option>
+                        <option value="Prompt Engineering">Prompt Engineering (Resumen Final)</option>
+                    </select>
+                </div>
+
+                <button onclick="generateVideo()" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
+                    <i class="fas fa-wand-magic-sparkles mr-2"></i> Generar Video Resumen IA
+                </button>
+                
+                <!-- Dashboard Multimedia Simulado -->
+                <div class="border-t pt-4 mt-4">
+                    <h4 class="text-xl font-semibold mb-2 text-gray-800">Dashboard Multimedia</h4>
+                    <div id="multimedia-dashboard" class="space-y-2">
+                        <div class="flex justify-between items-center p-2 bg-white rounded-lg shadow-sm">
+                            <span><i class="fas fa-chart-pie text-blue-500 mr-2"></i> Infografía Personalizada:</span>
+                            <span id="infografia-status" class="text-gray-500">No disponible</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-white rounded-lg shadow-sm">
+                            <span><i class="fas fa-film text-green-500 mr-2"></i> Clips Explicativos (Total):</span>
+                            <span id="clips-total" class="text-gray-500">0 clips</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-white rounded-lg shadow-sm">
+                            <span><i class="fas fa-file-video text-pink-500 mr-2"></i> Último Video Resumen:</span>
+                            <span id="last-video-status" class="text-gray-500">Ninguno</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button type="button" onclick="closeModal(null, 'videoModal')" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-300">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal de Confirmación Genérico (Reemplazo de confirm()) -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50" onclick="closeModal(event, 'confirmModal')">
+        <div class="bg-white rounded-lg p-6 w-full max-w-sm shadow-2xl" onclick="event.stopPropagation()">
+            <h3 class="text-xl font-bold mb-4 text-orange-600"><i class="fas fa-exclamation-triangle mr-2"></i> Confirmación Requerida</h3>
+            <p id="confirm-message" class="mb-6 text-gray-700">¿Estás seguro de que quieres realizar esta acción crítica?</p>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeModal(null, 'confirmModal')" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-300">Cancelar</button>
+                <button id="confirm-action-button" type="button" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition duration-300">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Notificación Genérico (Reemplazo de alert()) -->
+    <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50" onclick="closeModal(event, 'notificationModal')">
+        <div class="bg-white rounded-lg p-6 w-full max-w-sm shadow-2xl relative" onclick="event.stopPropagation()">
+            <div class="flex items-center mb-4">
+                <i id="notification-icon" class="text-3xl mr-3"></i>
+                <h3 id="notification-title" class="text-xl font-bold">Notificación</h3>
+            </div>
+            <p id="notification-message" class="text-gray-700 mb-4"></p>
+            <div class="flex justify-end">
+                <button type="button" onclick="closeModal(null, 'notificationModal')" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Importaciones de Firebase 
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Importamos 'collection', 'addDoc', 'onSnapshot' y AHORA 'query' y 'orderBy' (para el foro)
+        import { getFirestore, setLogLevel, collection, addDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        /**
+         * PASO 0: Configuración Local de Firebase (Solo si no está en Canvas)
+         */
+        const LOCAL_FIREBASE_CONFIG = {
+   apiKey: "AIzaSyAraXSa95EcF2zqsk-ZK9uVlZQ05VPu-Vk", // <-- Clave genérica
+  authDomain: "learning-together-aj.firebaseapp.com",
+  projectId: "learning-together-aj",
+  storageBucket: "learning-together-aj.appspot.com",
+  messagingSenderId: "338865662705",
+  appId: "1:338865662705:web:82193e62f520f18831804b"
+};
+
+
+        /**
+         * PASO 1: Configuración e Inicialización de Firebase
+         */
+        
+        // 1. Determinar la configuración a usar: Canvas (con variables globales) o Local (con LOCAL_FIREBASE_CONFIG)
+        let FIREBASE_CONFIG_TO_USE = {};
+        let isRunningInCanvas = typeof __firebase_config !== 'undefined';
+
+        if (isRunningInCanvas) {
+            FIREBASE_CONFIG_TO_USE = JSON.parse(__firebase_config);
+        } else {
+            console.warn("[FIREBASE] Usando configuración LOCAL (VS Code). ¡Asegúrate de actualizar LOCAL_FIREBASE_CONFIG!");
+            FIREBASE_CONFIG_TO_USE = LOCAL_FIREBASE_CONFIG;
+        }
+
+        // 2. Establecer IDs (el appId es el ID del Canvas, si no existe, usamos un ID genérico)
+        const localProjectId = FIREBASE_CONFIG_TO_USE.projectId;
+        const appId = isRunningInCanvas ? __app_id : localProjectId;
+        const initialAuthToken = isRunningInCanvas ? __initial_auth_token : null;
+        
+        // 3. Inicializar Firebase de forma segura
+        let app = null;
+        let auth = null;
+        let db = null;
+        let initializationError = false;
+
+        // Comprobamos si tenemos una configuración válida (al menos el projectId que no sea el placeholder)
+        if (FIREBASE_CONFIG_TO_USE && FIREBASE_CONFIG_TO_USE.projectId && FIREBASE_CONFIG_TO_USE.projectId !== "TU_PROJECT_ID") {
+            try {
+                app = initializeApp(FIREBASE_CONFIG_TO_USE);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('debug'); 
+                console.log("[FIREBASE] Inicialización de App y DB exitosa.");
+            } catch(e) {
+                console.error("[FIREBASE FATAL] Error al inicializar Firebase con la configuración proporcionada. Revisa tus credenciales.", e);
+                initializationError = true;
+            }
+        } else if (!isRunningInCanvas) {
+            console.error("[FIREBASE FATAL] No se pudo inicializar Firebase. Debes actualizar la variable LOCAL_FIREBASE_CONFIG con tus credenciales. La funcionalidad de DB está deshabilitada.");
+            initializationError = true;
+        }
+
+
+        let userId = null;
+        let isAuthReady = false;
+
+        async function authenticateUser() {
+            if (initializationError) {
+                // Si hubo un error en la inicialización, no intentar autenticar.
+                isAuthReady = true;
+                return;
+            }
+
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("[AUTH] Sesión iniciada con token personalizado.");
+                } else {
+                    await signInAnonymously(auth);
+                    console.log("[AUTH] Sesión iniciada anónimamente.");
+                }
+            } catch (error) {
+                console.error("[AUTH ERROR] Error durante la autenticación:", error);
+                // Si la autenticación falla, asumimos que no hay base de datos.
+                isAuthReady = true; 
+            }
+        }
+        
+        // Función para actualizar la interfaz del botón de registro
+        function updateRegistrationButton(isRegistered) {
+            const button = document.getElementById('registerButton');
+            const modal = document.getElementById('registerModal');
+            
+            if (isRegistered) {
+                // Si el usuario ya se registró:
+                button.textContent = '✅ Ya Registrado';
+                button.classList.add('btn-registered'); // Clase CSS especial
+                button.onclick = () => showNotification('¡Ya te has registrado! Bienvenido de vuelta.', 'info');
+                // Ocultamos el modal de registro ya que no es necesario
+                if (modal) modal.remove(); 
+                console.log("[UX] Botón de registro actualizado: Ya Registrado.");
+            } else {
+                // Si el usuario NO se ha registrado:
+                button.innerHTML = '<i class="fas fa-user-plus mr-2"></i> Regístrate Ahora';
+                button.classList.remove('btn-registered');
+                button.onclick = () => openModal('registerModal');
+                console.log("[UX] Botón de registro disponible.");
+            }
+        }
+
+        // ----------------------------------------------------------------------
+        // ** PARTES 3 & 4: Lógica de Lectura en Tiempo Real y Dashboard **
+        // ----------------------------------------------------------------------
+        
+        /**
+         * 🔄 Actualiza el dashboard del usuario con los datos de Firebase.
+         * @param {number} appointmentCount - Número total de citas agendadas.
+         */
+        function updateDashboard(appointmentCount) {
+            const dashboard = document.getElementById('user-dashboard');
+            const pointsEl = document.getElementById('dashboard-points');
+            const appointmentsEl = document.getElementById('dashboard-appointments');
+            
+            // Lógica de Gamificación: Puntos (Simulación)
+            // Asignamos 10 puntos por cada cita agendada
+            const totalPoints = appointmentCount * 10; 
+
+            if (dashboard) {
+                // Si el usuario está autenticado, mostramos el dashboard
+                dashboard.classList.remove('hidden');
+                pointsEl.textContent = totalPoints;
+                appointmentsEl.textContent = appointmentCount;
+                
+                // Lógica de niveles (Simulación):
+                let levelMessage = '';
+                if (totalPoints >= 30) {
+                    levelMessage = '¡Gran Colaborador! Eres Nivel Experto. 🚀';
+                } else if (totalPoints >= 10) {
+                    levelMessage = '¡Estudiante Proactivo! Eres Nivel Intermedio. 👍';
+                }
+                
+                document.getElementById('welcome-message').innerHTML = `<i class="fas fa-gem mr-2"></i> ${levelMessage || '¡Bienvenido! Tu progreso cuenta.'}`;
+            }
+        }
+        
+        /**
+         * 🔄 Actualiza el dashboard multimedia con datos simulados.
+         * @param {string} videoStatus - Estado del último video generado.
+         */
+        function updateMultimediaDashboard(videoStatus) {
+            const infografiaStatus = document.getElementById('infografia-status');
+            const clipsTotal = document.getElementById('clips-total');
+            const lastVideoStatus = document.getElementById('last-video-status');
+            
+            // Simulación de datos de progreso
+            const clips = 5; // Simulación: 5 clips generados automáticamente
+            
+            infografiaStatus.textContent = 'Generada (Ver Aquí)';
+            infografiaStatus.classList.remove('text-gray-500');
+            infografiaStatus.classList.add('text-green-600', 'font-semibold');
+            
+            clipsTotal.textContent = `${clips} clips`;
+            
+            if (videoStatus) {
+                 lastVideoStatus.textContent = videoStatus;
+                 lastVideoStatus.classList.add('text-pink-600', 'font-semibold');
+            }
+        }
+        
+        /**
+         * 🔄 Renderiza los mensajes del foro.
+         * @param {Array<Object>} posts - Lista de documentos de posts.
+         */
+        function renderForumPosts(posts) {
+            const container = document.getElementById('forum-posts');
+            container.innerHTML = ''; // Limpiar mensajes anteriores
+            
+            if (posts.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 mt-16">Sé el primero en publicar una pregunta o un comentario.</p>';
+                return;
+            }
+
+            // Ordenar por fecha (más nuevo primero) antes de renderizar (ya que el query lo hace, esto es por si acaso)
+            posts.sort((a, b) => b.timestamp - a.timestamp); 
+            
+            posts.forEach(post => {
+                const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : 'Fecha desconocida';
+                
+                const postDiv = document.createElement('div');
+                postDiv.className = 'p-3 border-b border-gray-100 last:border-b-0';
+                postDiv.innerHTML = `
+                    <div class="flex items-center text-sm mb-1">
+                        <i class="fas fa-user-circle text-blue-500 mr-2"></i>
+                        <span class="font-semibold text-gray-700">${post.userName || 'Usuario Anónimo'}</span>
+                        <span class="text-gray-400 ml-3 text-xs">${date}</span>
+                    </div>
+                    <p class="text-gray-800 ml-6 whitespace-pre-wrap">${post.message}</p>
+                `;
+                container.appendChild(postDiv);
+            });
+            
+            // Desplazar al final para ver el mensaje más nuevo
+            container.scrollTop = container.scrollHeight; 
+        }
+
+        /**
+         * 🎧 Configura los listeners de datos para el usuario actual.
+         */
+        function setupDataListeners() {
+            if (initializationError || !db || !userId) {
+                 console.warn("[FIRESTORE] Listener de datos deshabilitado. Revisa la configuración de Firebase.");
+                 document.getElementById('forum-posts').innerHTML = '<p class="text-center text-red-500 mt-16">El foro está deshabilitado. Error de conexión con Firebase.</p>';
+                return;
+            }
+            
+            const currentUserId = userId;
+            const currentAppId = appId;
+            
+            // Listener 1: Registros (Para actualizar el botón de registro)
+            const regPath = `artifacts/${currentAppId}/users/${currentUserId}/registrations`;
+            onSnapshot(collection(db, regPath), (snapshot) => {
+                const registrationsCount = snapshot.docs.length; 
+                updateRegistrationButton(registrationsCount > 0);
+                console.log(`[FIRESTORE] Registrations: ${registrationsCount} documents.`);
+            }, (error) => {
+                console.error("[FIRESTORE ERROR] Error en registrations listener:", error);
+            });
+            
+            // Listener 2: Citas (Para actualizar el dashboard de Gamificación)
+            const apptPath = `artifacts/${currentAppId}/users/${currentUserId}/appointments`;
+            onSnapshot(collection(db, apptPath), (snapshot) => {
+                const appointmentCount = snapshot.docs.length;
+                updateDashboard(appointmentCount);
+                console.log(`[FIRESTORE] Appointments: ${appointmentCount} documents.`);
+            }, (error) => {
+                console.error("[FIRESTORE ERROR] Error en appointments listener:", error);
+            });
+            
+            // Listener 3 (NUEVO): Foro Global (Colección Pública)
+            // Ruta Pública: /artifacts/{appId}/public/data/forum_posts
+            const forumPath = `artifacts/${currentAppId}/public/data/forum_posts`;
+            
+            // Creamos un Query para ordenar los posts por fecha (descendente)
+            // NOTA: 'timestamp' es el campo que se guarda en el addDoc (ver submitForumPost)
+            const forumQuery = query(collection(db, forumPath), orderBy('timestamp', 'desc'), limit(50));
+            
+            onSnapshot(forumQuery, (snapshot) => {
+                const posts = [];
+                snapshot.forEach(doc => {
+                    posts.push({ id: doc.id, ...doc.data() });
+                });
+                renderForumPosts(posts.reverse()); // Invertir para mostrar el más nuevo al final de la ventana
+                console.log(`[FIRESTORE] Forum Posts: ${posts.length} documents.`);
+            }, (error) => {
+                console.error("[FIRESTORE ERROR] Error en forum listener:", error);
+                document.getElementById('forum-posts').innerHTML = '<p class="text-center text-red-500 mt-16">Error al cargar el foro. Verifica las reglas de seguridad de Firebase.</p>';
+            });
+            
+            // Simulación de Dashboard Multimedia: Actualizar al inicio
+            updateMultimediaDashboard(null);
+        }
+        
+        // Listener de Autenticación (Se asegura de que setupDataListeners se llame con el userId correcto)
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log(`[AUTH] Usuario autenticado. UID: ${userId}`);
+                
+                setupDataListeners();
+            } else {
+                userId = null;
+                console.log("[AUTH] Usuario desautenticado.");
+                updateRegistrationButton(false); 
+                document.getElementById('user-dashboard').classList.add('hidden'); 
+            }
+            isAuthReady = true;
+            
+            const footer = document.querySelector('footer');
+            if (footer && userId) {
+                let userIdDisplay = document.getElementById('userIdDisplay');
+                if (!userIdDisplay) {
+                    userIdDisplay = document.createElement('p');
+                    userIdDisplay.id = 'userIdDisplay';
+                    userIdDisplay.className = 'text-xs mt-2 text-gray-500';
+                    footer.prepend(userIdDisplay);
+                }
+                userIdDisplay.textContent = `ID de Usuario (UID): ${userId}`;
+            }
+        });
+
+        authenticateUser();
+
+        // 🚨 CORRECCIÓN: Exportar funciones para que el HTML pueda acceder a ellas.
+        window.db = db; 
+        window.getUserId = () => userId; 
+        window.getAppId = () => appId; 
+        window.isAuthReady = () => isAuthReady; 
+        
+        // ** EXPORTACIÓN DE FUNCIONES FALTANTES **
+        window.generateVideo = generateVideo;
+        window.submitForumPost = submitForumPost;
+        window.showNotification = showNotification; // Asegurar que el HTML pueda llamar a las notificaciones
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.openConfirmationModal = openConfirmationModal; // Necesaria para el formulario de cita
+        window.handleFormSubmit = handleFormSubmit; // Necesaria para el registro y cita
+        window.sendMessage = sendMessage;
+        window.toggleVoiceInput = toggleVoiceInput;
+        
+        // --- COMIENZA LA LÓGICA JAVASCRIPT COMÚN ---
+        
+        const formToSubmit = { id: null };
+
+        // Función para mostrar el modal genérico de notificación (Reemplaza alert())
+        function showNotification(message, type = 'success') {
+            const modal = document.getElementById('notificationModal');
+            const icon = document.getElementById('notification-icon');
+            const title = document.getElementById('notification-title');
+            const messageEl = document.getElementById('notification-message');
+            
+            icon.className = ''; 
+
+            switch (type) {
+                case 'success':
+                    icon.classList.add('fas', 'fa-check-circle', 'text-green-500');
+                    title.textContent = '¡Éxito!';
+                    title.classList.add('text-green-600');
+                    break;
+                case 'error':
+                    icon.classList.add('fas', 'fa-times-circle', 'text-red-500');
+                    title.textContent = 'Error';
+                    title.classList.add('text-red-600');
+                    break;
+                case 'warning':
+                    icon.classList.add('fas', 'fa-exclamation-triangle', 'text-yellow-500');
+                    title.textContent = 'Advertencia';
+                    title.classList.add('text-yellow-600');
+                    break;
+                case 'info':
+                default:
+                    icon.classList.add('fas', 'fa-info-circle', 'text-blue-500');
+                    title.textContent = 'Información';
+                    title.classList.add('text-blue-600');
+                    break;
+            }
+
+            messageEl.textContent = message;
+            openModal('notificationModal');
+        }
+
+        // Función para abrir cualquier modal
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // Función para cerrar cualquier modal
+        function closeModal(event, modalId) {
+            if (!event || event.target.id === modalId) {
+                const modal = document.getElementById(modalId);
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // Función para abrir el modal de confirmación (Reemplaza confirm())
+        function openConfirmationModal(formId) {
+            const form = document.getElementById(formId);
+            const emailInput = form.querySelector('input[type="email"]');
+            
+            // Validar email antes de confirmar
+            if (!validateEmail(emailInput.value)) {
+                showNotification('Por favor, introduce un correo electrónico válido antes de confirmar.', 'error');
+                emailInput.focus();
+                return;
+            }
+
+            // Guardar el formulario para el envío posterior
+            formToSubmit.id = formId; 
+            
+            const confirmModal = document.getElementById('confirmModal');
+            const confirmMessage = document.getElementById('confirm-message');
+            const confirmButton = document.getElementById('confirm-action-button');
+
+            confirmMessage.textContent = `Estás a punto de confirmar tu cita de asesoría. ¿Deseas continuar con el envío de tus datos?`;
+            
+            // Asignar el evento al botón de confirmación
+            confirmButton.onclick = function() {
+                closeModal(null, 'confirmModal');
+                // Llamar a la función de envío de formulario real
+                document.getElementById(formToSubmit.id).dispatchEvent(new Event('submit', { cancelable: true }));
+            };
+
+            openModal('confirmModal');
+        }
+
+        // Función de Validación de Email
+        function validateEmail(email) {
+            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
+
+        // Función de Envío de Formulario (Usa addDoc de la Parte 2)
+        async function handleFormSubmit(event, formType, modalId) {
+            event.preventDefault();
+
+            // 1. Verificación Inicial de Autenticación
+            if (!window.isAuthReady() || !window.getUserId()) {
+                showNotification('El sistema de base de datos aún se está cargando. Por favor, espera un momento y vuelve a intentarlo. (Revisa tu configuración local de Firebase si usas VS Code)', 'warning');
+                return;
+            }
+
+            // 1.1 Verificación de Conexión a DB
+            if (initializationError || !db) {
+                showNotification('¡La base de datos está desconectada! Revisa si actualizaste la variable LOCAL_FIREBASE_CONFIG en el código.', 'error');
+                return;
+            }
+
+            const currentUserId = window.getUserId();
+            const currentAppId = window.getAppId();
+            const form = event.target;
+            
+            // 2. Recolección de Datos
+            const name = form.querySelector('input[name="name"]').value;
+            const email = form.querySelector('input[name="email"]').value;
+            let topic = '';
+
+            // Validación de Email (la misma que tenías, pero ahora clave para la BD)
+            if (!validateEmail(email)) {
+                showNotification('Por favor, introduce un correo electrónico válido antes de enviar.', 'error');
+                return;
+            }
+
+            // Determinar la colección y los datos a guardar
+            let collectionName;
+            let dataToSave = {
+                name: name,
+                email: email,
+                timestamp: new Date() 
+            };
+
+            if (formType === 'Registro') {
+                collectionName = 'registrations'; 
+            } else if (formType === 'Cita') {
+                collectionName = 'appointments'; 
+                topic = form.querySelector('select[name="topic"]').value;
+                dataToSave.topic = topic;
+                dataToSave.status = 'Pending (Via Make Simulation)';
+            } else {
+                console.error(`Tipo de formulario desconocido: ${formType}`);
+                return;
+            }
+
+            // 3. Creación de la Ruta y Guardado en Firestore
+            try {
+                // **Ruta Segura y Privada en Firestore:** // /artifacts/{appId}/users/{userId}/[collectionName]
+                const collectionPath = `artifacts/${currentAppId}/users/${currentUserId}/${collectionName}`;
+                
+                const collectionRef = collection(db, collectionPath);
+
+                await addDoc(collectionRef, dataToSave);
+
+                console.log(`[FIRESTORE] Documento de ${formType} guardado con éxito en: ${collectionPath}`);
+                
+                // 4. Notificación de Éxito y Limpieza
+                showNotification(`¡${formType} enviado y guardado! Tus datos ya están seguros.`, 'success');
+                
+                closeModal(null, modalId);
+                form.reset(); 
+
+            } catch (e) {
+                console.error("[FIRESTORE ERROR] Error al guardar el documento: ", e);
+                showNotification(`Hubo un error al guardar tus datos. (Revisa las reglas de seguridad de Firebase)`, 'error');
+            }
+        }
+        
+        /**
+         * 📣 Función para enviar un nuevo mensaje al foro público.
+         */
+        async function submitForumPost(event) {
+            event.preventDefault();
+            
+            const inputElement = document.getElementById('forum-input');
+            const message = inputElement.value.trim();
+            
+            if (message.length < 5) {
+                showNotification('Tu mensaje es demasiado corto. Por favor, escribe un comentario o pregunta más detallada.', 'warning');
+                return;
+            }
+            
+            if (!window.isAuthReady() || !window.getUserId()) {
+                showNotification('La autenticación se está cargando. Por favor, espera un momento antes de publicar. (Revisa tu configuración local de Firebase si usas VS Code)', 'warning');
+                return;
+            }
+            
+            // 1.1 Verificación de Conexión a DB
+            if (initializationError || !db) {
+                showNotification('¡La base de datos está desconectada! Revisa si actualizaste la variable LOCAL_FIREBASE_CONFIG en el código.', 'error');
+                return;
+            }
+
+
+            // Simulación de nombre de usuario: usar el UID para la identidad
+            const userName = 'User-' + window.getUserId().substring(0, 8); 
+            
+            const dataToSave = {
+                userName: userName,
+                message: message,
+                timestamp: new Date(),
+                userId: window.getUserId()
+            };
+            
+            // 4. Creación de la Ruta y Guardado en Firestore (Ruta PÚBLICA)
+            // /artifacts/{appId}/public/data/forum_posts
+            const forumPath = `artifacts/${window.getAppId()}/public/data/forum_posts`;
+            
+            try {
+                await addDoc(collection(db, forumPath), dataToSave);
+                console.log("[FIRESTORE] Mensaje publicado en el foro global.");
+                inputElement.value = ''; // Limpiar el input
+            } catch (e) {
+                console.error("[FIRESTORE ERROR] Error al publicar en el foro: ", e);
+                showNotification(`Hubo un error al publicar el mensaje. (Revisa las reglas de seguridad de Firebase)`, 'error');
+            }
+        }
+
+
+        /**
+         * Simula la generación de un video resumen por IA (Criterio 4).
+         */
+        function generateVideo() {
+            const topic = document.getElementById('video-topic').value;
+            
+            if (!topic) {
+                showNotification('Por favor, selecciona un curso para generar el video resumen.', 'warning');
+                return;
+            }
+            
+            showNotification(`Generando Video Resumen para: **${topic}**... Esto tardará unos segundos (Simulación de IA).`, 'info');
+            
+            // Simulación de tiempo de procesamiento de IA
+            setTimeout(() => {
+                showNotification(`✅ Video Resumen de ${topic} COMPLETADO. Ya puedes descargarlo.`, 'success');
+                
+                // Actualiza el Dashboard Multimedia (Simulación de estado guardado)
+                updateMultimediaDashboard(`Descargar Video (${topic})`);
+                
+            }, 3000); // 3 segundos para simular la generación
+        }
+
+        // ----------------------------------------------------------------------
+        // ** INTEGRACIÓN DEL AGENTE DE IA (GEMINI) - COMIENZA AQUÍ **
+        // ----------------------------------------------------------------------
+
+        // --- Configuración de la API de Gemini ---
+        const GEMINI_API_KEY = "AIzaSyDrcF6h60Y32LdTBQbQ6rl9Ro5fYhMJx6A";
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        
+        // NUEVA URL: Apunta a tu servidor proxy local
+        const PROXY_API_URL = "http://localhost:3000/api/chat";
+
+        // Instrucción de Sistema: Define el rol de AURA
+        const GEMINI_SYSTEM_PROMPT = "Eres AURA, un tutor experto en Inteligencia Artificial, Machine Learning y Prompt Engineering. Responde las preguntas del estudiante de forma clara, amigable y concisa. Si te piden un 'quiz', genera tres preguntas de opción múltiple relacionadas con el tema y sus respuestas. Si la pregunta no está relacionada con IA, amablemente redirige la conversación a esos temas.";
+
+
+        /**
+        * Llama al Servidor Proxy seguro para obtener la respuesta de Gemini.
+        * @param {string} prompt - La consulta del usuario.
+               * @param {number} retries - Número de reintentos restantes.
+        * @param {number} delay - Retraso actual antes del reintento.
+        * @returns {Promise<string>} La respuesta del modelo o un mensaje de error.
+        */
+        async function callGeminiAPI(prompt, retries = 3, delay = 1000) {
+            const chatLoading = document.getElementById('chat-loading');
+            const sendButton = document.querySelector('#auraModal button[title="Enviar Mensaje"]');
+            const userInput = document.getElementById('user-input');
+
+            if (chatLoading) chatLoading.classList.remove('hidden');
+            if (sendButton) sendButton.disabled = true;
+            if (userInput) userInput.disabled = true;
+    
+            // 1. El payload es simple: solo enviamos el prompt al proxy
+            const payload = {
+                prompt: prompt 
+            };
+
+            try {
+        // 2. Llamada al Servidor Proxy (PROXY_API_URL)
+        const response = await fetch(PROXY_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            // Si hay un error, intentamos leer el mensaje de error del proxy
+            const errorResult = await response.json();
+            throw new Error(`Error en el Proxy: ${errorResult.error || response.statusText}`);
+        }
+
+        // 3. El proxy nos devuelve un objeto simple: { text: "..." }
+        const result = await response.json();
+        
+        if (result.text) {
+            return result.text; // Retorna el texto de la IA directamente
+        } else {
+            throw new Error("Respuesta del proxy inválida o incompleta.");
+        }
+    } catch (error) {
+        console.error("Error en callGeminiAPI:", error);
+        if (retries > 0) {
+            // Si es un error de conexión, intenta de nuevo
+            await new Promise(res => setTimeout(res, delay));
+            return callGeminiAPI(prompt, retries - 1, delay * 2);
+        } else {
+            return "Lo siento, estoy teniendo problemas de conexión con el servidor de IA (Verifica que tu servidor proxy Node.js esté corriendo). Por favor, intenta de nuevo más tarde.";
+        }
+    } finally {
+        if (chatLoading) chatLoading.classList.add('hidden');
+        if (sendButton) sendButton.disabled = false;
+        if (userInput) userInput.disabled = false;
+    }
+}
+
+
+        /**
+         * Agrega un mensaje a la ventana de chat y maneja el scroll.
+         * @param {string} message - El texto del mensaje.
+         * @param {'user'|'ai'} sender - Quién envió el mensaje.
+         */
+        function addMessage(message, sender) {
+            const chatMessages = document.getElementById('chat-messages');
+            
+            const bubble = document.createElement('div');
+            // Usamos las clases de estilo definidas en el <style>
+            bubble.classList.add('chat-message', sender, 'my-2', 'p-3', 'shadow-md'); 
+
+            if (sender === 'ai') {
+                // Para AURA, incluimos el nombre del tutor
+                bubble.innerHTML = `<p class="font-semibold text-purple-700 mb-1">AURA:</p><p style="white-space: pre-wrap;">${message}</p>`;
+            } else {
+                // Para el usuario
+                bubble.innerHTML = `<p style="white-space: pre-wrap;">${message}</p>`;
+            }
+            
+            chatMessages.appendChild(bubble);
+            // Desplaza al final para ver el mensaje más reciente
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+
+        /**
+         * Lógica principal del chatbot AURA, ahora usando Gemini.
+         */
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (message === "") return;
+
+            input.value = ''; 
+            
+            // 1. Mostrar mensaje del usuario
+            addMessage(message, 'user');
+            
+            // 2. Llamar a la API de Gemini (con indicador de carga)
+            const aiResponse = await callGeminiAPI(message);
+            
+            // 3. Mostrar respuesta de AURA
+            addMessage(aiResponse, 'ai');
+        }
+
+
+        // ----------------------------------------------------------------------
+        // ** PARTE 5: Mejoras del Chatbot AURA y Voz (TTS/STT Simulado) **
+        // ----------------------------------------------------------------------
+        
+        let isListening = false;
+        
+        /**
+         * Simula la activación/desactivación de la entrada de voz (Speech-to-Text).
+         */
+        function toggleVoiceInput() {
+            const button = document.getElementById('voice-button');
+            const statusEl = document.getElementById('voice-status');
+            
+            isListening = !isListening;
+            
+            if (isListening) {
+                // Estado: Activado (Simulación)
+                button.classList.remove('bg-gray-400', 'hover:bg-gray-500');
+                button.classList.add('bg-red-500', 'animate-pulse'); // Usamos rojo para indicar grabación/activo
+                statusEl.textContent = '🎤 Escuchando... ¡Dime tu pregunta!';
+                statusEl.classList.remove('hidden');
+                
+                // Simulación: Detener automáticamente después de 4 segundos
+                setTimeout(() => {
+                    if (isListening) {
+                        // En lugar de un mensaje fijo, podríamos simular un mensaje que active un caso de uso
+                        const simulatedVoiceQuery = "Explícame qué es la ingeniería de prompts";; 
+                        simulateVoiceInput(simulatedVoiceQuery); // Simulación de lo que el usuario dijo
+                        toggleVoiceInput(); // Desactivar
+                    }
+                }, 4000); 
+
+            } else {
+                // Estado: Desactivado
+                button.classList.remove('bg-red-500', 'animate-pulse');
+                button.classList.add('bg-gray-400', 'hover:bg-gray-500');
+                statusEl.textContent = 'Voz inactiva. Haz clic para activar.';
+                statusEl.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Simula la inserción de texto por voz en el campo de entrada.
+         */
+        function simulateVoiceInput(text) { 
+             const input = document.getElementById('user-input');
+             input.value = text;
+             sendMessage(); 
+        }
+
+// ... fin de la función
+
+    </script>
+
+</body>
+</html>
