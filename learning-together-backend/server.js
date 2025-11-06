@@ -6,7 +6,7 @@ import axios from 'axios'; // <-- ¡NUEVA LIBRERÍA!
 
 // 2. Configuración del Servidor y Claves
 const app = express();
-const PORT = 3000; 
+const PORT = process.env.PORT || 3000; // Usa el puerto de Render o, si no existe, usa 3000 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
 const GEMINI_MODEL = process.env.GEMINI_MODEL; 
 
@@ -67,4 +67,5 @@ app.post('/api/chat', async (req, res) => {
 // 5. Iniciar el Servidor
 app.listen(PORT, () => {
     console.log(`Servidor proxy de AURA corriendo en http://localhost:${PORT}`);
+
 });
