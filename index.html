@@ -1097,7 +1097,7 @@
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         
         // NUEVA URL: Apunta a tu servidor proxy local
-        const PROXY_API_URL = "http://localhost:3000/api/chat";
+        const PROXY_API_URL = "https://learningtogether-e1qc.onrender.com/api/chat";
 
         // Instrucción de Sistema: Define el rol de AURA
         const GEMINI_SYSTEM_PROMPT = "Eres AURA, un tutor experto en Inteligencia Artificial, Machine Learning y Prompt Engineering. Responde las preguntas del estudiante de forma clara, amigable y concisa. Si te piden un 'quiz', genera tres preguntas de opción múltiple relacionadas con el tema y sus respuestas. Si la pregunta no está relacionada con IA, amablemente redirige la conversación a esos temas.";
