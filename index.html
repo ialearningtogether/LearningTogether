@@ -32,7 +32,7 @@
         /* Estilo para el botón flotante del Asistente IA (AURA) */
         #aura-button {
             position: fixed;
-            bottom: 20px;
+            bottom: 80px;
             right: 20px;
             z-index: 100; 
             transition: transform 0.3s ease-in-out;
@@ -67,29 +67,6 @@
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
         }
         
-        /* Estilo para el botón flotante de WhatsApp */
-        #whatsapp-button {
-            position: fixed;
-            bottom: 100px; 
-            right: 20px;
-            z-index: 110; 
-            transition: transform 0.3s ease-in-out;
-            padding: 0; 
-            background-color: transparent; 
-            box-shadow: none; 
-            width: 60px; 
-            height: 60px;
-            border-radius: 50%; 
-        }
-        #whatsapp-button:hover {
-            transform: scale(1.1);
-        }
-        #whatsapp-button img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain; 
-        }
-
         /* Estilo para la tarjeta de cursos con imagen */
         .course-card img {
             height: 150px; /* Altura fija para la imagen */
@@ -303,12 +280,6 @@
             </div>
         </div>
     </section>
-
-    <!-- Botón Flotante de WhatsApp -->
-    <a href="https://wa.me/525512275068?text=Hola,%20quisiera%20saber%20más%20sobre%20Learning%20Together" target="_blank" id="whatsapp-button" class="transition duration-300 transform hover:scale-110">
-        <!-- NOTA: Se usa un placeholder para el icono de WhatsApp por ser un recurso externo -->
-        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Icon" class="w-full h-full object-contain"> 
-    </a>
     
     <!-- Botón Flotante del Asistente IA (AURA) -->
     <button id="aura-button" onclick="openModal('auraModal')" class="transition duration-300">
