@@ -976,8 +976,7 @@
                 // 4. Notificación de Éxito y Limpieza
                 showNotification(`¡${formType} enviado y guardado! Tus datos ya están seguros.`, 'success');
                 
-                document.getElementById(modalId).classList.add('hidden'); // CIERRA EL MODAL DIRECTAMENTE
-                document.getElementById(modalId).classList.remove('flex'); // CIERRA EL MODAL DIRECTAMENTE
+                closeModal(null, modalId); // Usa la función corregida
                 form.reset(); // Intenta el reset
 
             } catch (e) {
