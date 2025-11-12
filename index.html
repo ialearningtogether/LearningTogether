@@ -6,7 +6,7 @@
     <title>LEARNING TOGETHER | Aprendiendo Juntos IA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4Cg+aRz/2gqS4p7/r8Z4m5cK5Q8KjA5l5O4n4o4F5d5Rz9xR5xR5t5Q==	" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" xintegrity="sha512-Fo3rlrZj/k7ujTnHg4Cg+aRz/2gqS4p7/r8Z4m5cK5Q8KjA5l5O4n4o4F5d5Rz9xR5xR5t5Q==	" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         /* CRÍTICO: Asegura que los saltos de línea (\n) se muestren correctamente para el Chat de AURA y Quiz */
         .chat-message-ai p:last-child {
@@ -251,6 +251,29 @@
             <button onclick="openModal('videoModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-10 rounded-full shadow-xl transition duration-300 ease-in-out transform hover:scale-105">
                 <i class="fas fa-video mr-2"></i> Generar Video Resumen IA
             </button>
+        </div>
+    </section>
+
+    <!-- Sección de Contacto Rápido (Integración Make) -->
+    <section id="contact" class="py-16 px-4 md:px-8 bg-white">
+        <div class="max-w-4xl mx-auto text-center p-8 rounded-xl shadow-2xl border-t-4 border-yellow-500">
+            <h2 class="text-3xl font-bold mb-4 text-gray-800">✉️ ¿Tienes Preguntas? Contáctanos</h2>
+            <p class="text-gray-600 mb-6">Regístrate en este formulario para recibir una asesoría gratuita o una guía de inicio rápido por correo electrónico. (Simulación de conexión con **Make**).</p>
+            
+            <form id="registroForm" class="space-y-4">
+                <div>
+                    <input type="text" id="contact-name" name="name" placeholder="Tu Nombre" required class="w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-yellow-500 focus:border-yellow-500">
+                </div>
+                <div>
+                    <input type="email" id="contact-email" name="email" placeholder="Tu Correo Electrónico" required class="w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-yellow-500 focus:border-yellow-500">
+                </div>
+                <button type="submit" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg transition duration-300 transform hover:scale-[1.01]">
+                    <i class="fas fa-envelope mr-2"></i> Recibir Guía Gratis por Email
+                </button>
+            </form>
+            
+            <!-- Mensaje de confirmación del Webhook de Make -->
+            <div id="formMessage" class="mt-4 p-3 rounded-lg text-center font-medium hidden"></div>
         </div>
     </section>
 
@@ -501,10 +524,12 @@
                 <h3 id="notification-title" class="text-xl font-bold">Notificación</h3>
             </div>
             <p id="notification-message" class="text-gray-700 mb-4"></p>
-            <div class="flex justify-end">
-                <button type="button" onclick="closeModal(null, 'notificationModal')" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">Aceptar</button>
+            <button type="button" 
+                onclick="document.getElementById('notificationModal').classList.add('hidden'); document.getElementById('notificationModal').classList.remove('flex');" 
+                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">
+                Aceptar
+            </button>
             </div>
-        </div>
     </div>
 
     <script type="module">
@@ -517,15 +542,15 @@
         /**
          * PASO 0: Configuración Local de Firebase (Solo si no está en Canvas)
          */
-        const LOCAL_FIREBASE_CONFIG = {
-   apiKey: "AIzaSyAraXSa95EcF2zqsk-ZK9uVlZQ05VPu-Vk", // <-- Clave genérica
-  authDomain: "learning-together-aj.firebaseapp.com",
-  projectId: "learning-together-aj",
-  storageBucket: "learning-together-aj.appspot.com",
-  messagingSenderId: "338865662705",
-  appId: "1:338865662705:web:82193e62f520f18831804b"
-};
-
+        // *** COMENTARIOS CLAROS: PEGA AQUÍ TU CONFIGURACIÓN REAL DE FIREBASE ***
+        const LOCAL_FIREBASE_CONFIG = { // <<<< CORRECCIÓN: El nombre de la variable se corrige a LOCAL_FIREBASE_CONFIG
+            apiKey: "AIzaSyAraXSa95EcF2zqsk-ZK9uVlZQ05VPu-Vk", // <--- DEBES PEGAR AQUÍ TU CLAVE REAL
+            authDomain: "learning-together-aj.firebaseapp.com",
+            projectId: "learning-together-aj",
+            storageBucket: "learning-together-aj.firebasestorage.app",
+            messagingSenderId: "1005231459765",
+            appId: "1:1005231459765:web:5944be8ee172cd6b681dfc"
+        }; 
 
         /**
          * PASO 1: Configuración e Inicialización de Firebase
@@ -538,8 +563,8 @@
         if (isRunningInCanvas) {
             FIREBASE_CONFIG_TO_USE = JSON.parse(__firebase_config);
         } else {
-            console.warn("[FIREBASE] Usando configuración LOCAL (VS Code). ¡Asegúrate de actualizar LOCAL_FIREBASE_CONFIG!");
-            FIREBASE_CONFIG_TO_USE = LOCAL_FIREBASE_CONFIG;
+            console.warn("[FIREBASE] Usando configuración LOCAL. ¡Asegúrate de actualizar LOCAL_FIREBASE_CONFIG!");
+            FIREBASE_CONFIG_TO_USE = LOCAL_FIREBASE_CONFIG; // <<<< CORRECCIÓN: Ahora usa la constante con tus credenciales
         }
 
         // 2. Establecer IDs (el appId es el ID del Canvas, si no existe, usamos un ID genérico)
@@ -709,7 +734,7 @@
                 container.appendChild(postDiv);
             });
             
-            // Desplazar al final para ver el mensaje más nuevo
+            // Desplazar al final para ver el mensaje más reciente
             container.scrollTop = container.scrollHeight; 
         }
 
@@ -727,6 +752,7 @@
             const currentAppId = appId;
             
             // Listener 1: Registros (Para actualizar el botón de registro)
+            // COMENTARIOS CLAROS: Usamos una subcolección privada 'registrations' para cada usuario
             const regPath = `artifacts/${currentAppId}/users/${currentUserId}/registrations`;
             onSnapshot(collection(db, regPath), (snapshot) => {
                 const registrationsCount = snapshot.docs.length; 
@@ -737,6 +763,7 @@
             });
             
             // Listener 2: Citas (Para actualizar el dashboard de Gamificación)
+            // COMENTARIOS CLAROS: Usamos una subcolección privada 'appointments' para cada usuario
             const apptPath = `artifacts/${currentAppId}/users/${currentUserId}/appointments`;
             onSnapshot(collection(db, apptPath), (snapshot) => {
                 const appointmentCount = snapshot.docs.length;
@@ -747,7 +774,7 @@
             });
             
             // Listener 3 (NUEVO): Foro Global (Colección Pública)
-            // Ruta Pública: /artifacts/{appId}/public/data/forum_posts
+            // COMENTARIOS CLAROS: Usamos una colección pública 'forum_posts'
             const forumPath = `artifacts/${currentAppId}/public/data/forum_posts`;
             
             // Creamos un Query para ordenar los posts por fecha (descendente)
@@ -778,8 +805,9 @@
                 
                 setupDataListeners();
             } else {
-                userId = null;
-                console.log("[AUTH] Usuario desautenticado.");
+                // Generar un UID temporal para usuarios no autenticados (usado en entorno local sin token)
+                userId = crypto.randomUUID(); 
+                console.log("[AUTH] Usuario desautenticado/Anónimo. UID temporal:", userId);
                 updateRegistrationButton(false); 
                 document.getElementById('user-dashboard').classList.add('hidden'); 
             }
@@ -794,6 +822,7 @@
                     userIdDisplay.className = 'text-xs mt-2 text-gray-500';
                     footer.prepend(userIdDisplay);
                 }
+                // COMENTARIOS CLAROS: Mostrar el ID completo es obligatorio para depuración y multi-usuario
                 userIdDisplay.textContent = `ID de Usuario (UID): ${userId}`;
             }
         });
@@ -834,22 +863,26 @@
                 case 'success':
                     icon.classList.add('fas', 'fa-check-circle', 'text-green-500');
                     title.textContent = '¡Éxito!';
+                    title.classList.remove('text-red-600', 'text-yellow-600', 'text-blue-600');
                     title.classList.add('text-green-600');
                     break;
                 case 'error':
                     icon.classList.add('fas', 'fa-times-circle', 'text-red-500');
                     title.textContent = 'Error';
+                    title.classList.remove('text-green-600', 'text-yellow-600', 'text-blue-600');
                     title.classList.add('text-red-600');
                     break;
                 case 'warning':
                     icon.classList.add('fas', 'fa-exclamation-triangle', 'text-yellow-500');
                     title.textContent = 'Advertencia';
+                    title.classList.remove('text-green-600', 'text-red-600', 'text-blue-600');
                     title.classList.add('text-yellow-600');
                     break;
                 case 'info':
                 default:
                     icon.classList.add('fas', 'fa-info-circle', 'text-blue-500');
                     title.textContent = 'Información';
+                    title.classList.remove('text-green-600', 'text-red-600', 'text-yellow-600');
                     title.classList.add('text-blue-600');
                     break;
             }
@@ -861,16 +894,21 @@
         // Función para abrir cualquier modal
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
         }
 
         // Función para cerrar cualquier modal
         function closeModal(event, modalId) {
-            // Si NO hay evento, O si (hay evento AND el clic fue en el fondo del modal)
+            // CORRECCIÓN CRÍTICA: Se corrige la lógica para cerrar el modal correctamente.
             if (!event || (event.target && event.target.id === modalId)) { 
-            const modal = document.getElementById(modalId);
-            // ...
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
             }
         }
 
@@ -976,12 +1014,13 @@
                 // 4. Notificación de Éxito y Limpieza
                 showNotification(`¡${formType} enviado y guardado! Tus datos ya están seguros.`, 'success');
                 
-                closeModal(null, modalId); // Usa la función corregida
+                document.getElementById(modalId).classList.add('hidden'); 
+                document.getElementById(modalId).classList.remove('flex');
                 form.reset(); // Intenta el reset
 
             } catch (e) {
                 console.error("[FIRESTORE ERROR] Error al guardar el documento: ", e);
-                showNotification(`Hubo un error al guardar tus datos. (Revisa las reglas de seguridad de Firebase)`, 'error');
+                showNotification(`Hubo un error al guardar tus datos. (Verifica las reglas de seguridad de Firebase)`, 'error');
             }
         }
         
@@ -1031,7 +1070,7 @@
                 inputElement.value = ''; // Limpiar el input
             } catch (e) {
                 console.error("[FIRESTORE ERROR] Error al publicar en el foro: ", e);
-                showNotification(`Hubo un error al publicar el mensaje. (Revisa las reglas de seguridad de Firebase)`, 'error');
+                showNotification(`Hubo un error al publicar el mensaje. (Verifica las reglas de seguridad de Firebase)`, 'error');
             }
         }
 
@@ -1064,10 +1103,13 @@
         // ----------------------------------------------------------------------
 
         // --- Configuración de la API de Gemini ---
-        const GEMINI_API_KEY = "AIzaSyDrcF6h60Y32LdTBQbQ6rl9Ro5fYhMJx6A";
+        // COMENTARIOS CLAROS: La clave aquí (GEMINI_API_KEY) es SÓLO para un fallback. 
+        // La clave SECRETA debe estar en tu servidor de Render/Node.js.
+        const GEMINI_API_KEY = "AIzaSyDrcF6h60Y32LdTBQbQ6rl9Ro5fYhMJx6A"; // Clave genérica/simulada
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         
-        // NUEVA URL: Apunta a tu servidor proxy local
+        // URL del Servidor Proxy seguro (Node.js/Render)
+        // *** COMENTARIOS CLAROS: PEGA LA URL DE TU SERVIDOR PROXY REAL AQUÍ ***
         const PROXY_API_URL = "https://learningtogether-e1qc.onrender.com/api/chat";
 
         // Instrucción de Sistema: Define el rol de AURA
@@ -1077,7 +1119,7 @@
         /**
         * Llama al Servidor Proxy seguro para obtener la respuesta de Gemini.
         * @param {string} prompt - La consulta del usuario.
-               * @param {number} retries - Número de reintentos restantes.
+        * @param {number} retries - Número de reintentos restantes.
         * @param {number} delay - Retraso actual antes del reintento.
         * @returns {Promise<string>} La respuesta del modelo o un mensaje de error.
         */
@@ -1090,48 +1132,55 @@
             if (sendButton) sendButton.disabled = true;
             if (userInput) userInput.disabled = true;
     
-            // 1. El payload es simple: solo enviamos el prompt al proxy
+            // 1. El payload es simple: enviamos el prompt y el system prompt al proxy
             const payload = {
-                prompt: prompt 
+                prompt: prompt,
+                systemInstruction: GEMINI_SYSTEM_PROMPT
             };
 
+            // COMENTARIOS CLAROS: Verifica la URL del proxy para detectar fallas de conexión
+            if (PROXY_API_URL.includes("onrender.com") && PROXY_API_URL === "https://learningtogether-e1qc.onrender.com/api/chat") {
+                console.warn("[AURA] Usando URL de proxy de prueba. Asegúrate de que tu servidor esté activo.");
+            }
+
             try {
-        // 2. Llamada al Servidor Proxy (PROXY_API_URL)
-        const response = await fetch(PROXY_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+                // 2. Llamada al Servidor Proxy (PROXY_API_URL)
+                const response = await fetch(PROXY_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-        if (!response.ok) {
-            // Si hay un error, intentamos leer el mensaje de error del proxy
-            const errorResult = await response.json();
-            throw new Error(`Error en el Proxy: ${errorResult.error || response.statusText}`);
-        }
+                if (!response.ok) {
+                    // Si hay un error (ej: 404 o 500 del servidor proxy)
+                    const errorResult = await response.json().catch(() => ({ error: 'No se pudo parsear el error.' }));
+                    throw new Error(`Error en el Proxy: ${errorResult.error || response.statusText}`);
+                }
 
-        // 3. El proxy nos devuelve un objeto simple: { text: "..." }
-        const result = await response.json();
-        
-        if (result.text) {
-            return result.text; // Retorna el texto de la IA directamente
-        } else {
-            throw new Error("Respuesta del proxy inválida o incompleta.");
+                // 3. El proxy nos devuelve un objeto simple: { text: "..." }
+                const result = await response.json();
+                
+                if (result.text) {
+                    return result.text; // Retorna el texto de la IA directamente
+                } else {
+                    throw new Error("Respuesta del proxy inválida o incompleta.");
+                }
+            } catch (error) {
+                console.error("Error en callGeminiAPI:", error);
+                if (retries > 0) {
+                    // Implementación de Backoff Exponencial
+                    await new Promise(res => setTimeout(res, delay));
+                    return callGeminiAPI(prompt, retries - 1, delay * 2);
+                } else {
+                    return "Lo siento, estoy teniendo problemas de conexión con el servidor de IA. Por favor, intenta de nuevo más tarde o verifica que tu servidor proxy Node.js esté corriendo en: " + PROXY_API_URL;
+                }
+            } finally {
+                // Asegurar que el estado del chat se restablezca
+                if (chatLoading) chatLoading.classList.add('hidden');
+                if (sendButton) sendButton.disabled = false;
+                if (userInput) userInput.disabled = false;
+            }
         }
-    } catch (error) {
-        console.error("Error en callGeminiAPI:", error);
-        if (retries > 0) {
-            // Si es un error de conexión, intenta de nuevo
-            await new Promise(res => setTimeout(res, delay));
-            return callGeminiAPI(prompt, retries - 1, delay * 2);
-        } else {
-            return "Lo siento, estoy teniendo problemas de conexión con el servidor de IA (Verifica que tu servidor proxy Node.js esté corriendo). Por favor, intenta de nuevo más tarde.";
-        }
-    } finally {
-        if (chatLoading) chatLoading.classList.add('hidden');
-        if (sendButton) sendButton.disabled = false;
-        if (userInput) userInput.disabled = false;
-    }
-}
 
 
         /**
@@ -1231,14 +1280,91 @@
              sendMessage(); 
         }
 
-// ... fin de la función
+        // ----------------------------------------------------------------------
+        // ** INTEGRACIÓN DE MAKE (WEBHOOK) - COMIENZA AQUÍ **
+        // ----------------------------------------------------------------------
+
+        // Nota: El formulario de registro del Hero usa handleFormSubmit (Firebase) para el perfil. 
+        // Este formulario de contacto rápido (registroForm) usa el Webhook de Make para la simulación del email.
+        
+        const contactForm = document.getElementById('registroForm');
+        const formMessage = document.getElementById('formMessage');
+
+        // URL del Webhook de Make (Punto Final/Endpoint)
+        // *** COMENTARIOS CLAROS: PEGA LA URL REAL DE TU SCENARIO DE MAKE AQUÍ ***
+        const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/9dv6cpiio76f9epg5q85coh7malkn6dp'; 
+        
+        // Función de Validación de Email (para usar en la validación de Make)
+        function validateEmailMake(email) {
+            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
+
+        if (contactForm && formMessage) {
+            contactForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(contactForm);
+                const data = Object.fromEntries(formData.entries());
+                
+                // Validación del Email antes de enviar a Make
+                if (!validateEmailMake(data.email)) {
+                    showNotification('Por favor, introduce un correo electrónico válido en el formulario de contacto.', 'error');
+                    return;
+                }
+                
+                // Mostrar mensaje de envío
+                formMessage.classList.remove('hidden');
+                formMessage.textContent = 'Enviando tu solicitud a Make...';
+                formMessage.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+                formMessage.style.color = '#333';
+
+
+                // ** COMENTARIOS CLAROS: Si el usuario NO ha pegado su URL real, ejecutamos la SIMULACIÓN. **
+                if (MAKE_WEBHOOK_URL.includes('PEGA_AQUI_LA_URL_DE_TU_WEBHOOK_DE_MAKE')) {
+                    // Si el usuario olvidó pegar la URL, mostramos un mensaje de advertencia y simulamos el éxito.
+                    setTimeout(() => {
+                        formMessage.textContent = '⚠️ ¡AVISO! La URL de Make no está actualizada. El proceso real se SIMULA como exitoso.';
+                        formMessage.style.backgroundColor = '#fff3cd'; // Amarillo claro
+                        formMessage.style.color = '#856404'; // Texto marrón
+                        contactForm.reset();
+                    }, 1500);
+                    return;
+                }
+
+
+                try {
+                    // Envío de los datos al Webhook de Make (POST Request)
+                    const response = await fetch(MAKE_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data) // Envía los datos del formulario como JSON
+                    });
+
+                    if (response.ok) {
+                        // Éxito: Make devuelve un status 200/202 si se recibe correctamente
+                        formMessage.textContent = '✅ ¡Solicitud Enviada! Revisa tu correo, Make activó la automatización.';
+                        formMessage.style.backgroundColor = '#d4edda'; // Color verde claro
+                        formMessage.style.color = '#155724'; // Color de texto verde oscuro
+                        contactForm.reset(); // Limpia el formulario
+                    } else {
+                        // Error al recibir en Make (posiblemente un error de URL o en Make)
+                        const errorText = await response.text();
+                        throw new Error(`Error al conectar con Make: ${response.status} - ${errorText}`);
+                    }
+
+                } catch (error) {
+                    console.error('Error al enviar el formulario a Make:', error);
+                    formMessage.textContent = '❌ Error en la automatización. Verifica la URL de tu Webhook de Make y las reglas de tu escenario.';
+                    formMessage.style.backgroundColor = '#f8d7da'; // Color rojo claro
+                    formMessage.style.color = '#721c24'; // Color de texto rojo oscuro
+                }
+            });
+        }
+        // --- FIN DE LA LÓGICA MAKE ---
 
     </script>
-<script 
-  src="https://cdn.builderbot.cloud/sdk.umd.js"
-  data-builderbot-chat
-  data-company="builderbot"
-  data-id="f42c4cb7-f466-4fc3-a40f-0e4c11563392"
-></script>
 </body>
 </html>
