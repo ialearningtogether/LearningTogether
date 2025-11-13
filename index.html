@@ -535,50 +535,49 @@
     <script type="module">
         // Importaciones de Firebase 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // Importamos 'collection', 'addDoc', 'onSnapshot' y AHORA 'query' y 'orderBy' (para el foro)
+        // CRÍTICO: Añadimos 'signOut' para la limpieza y reset de sesión
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Importamos Firestore
         import { getFirestore, setLogLevel, collection, addDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         /**
          * PASO 0: Configuración Local de Firebase (Solo si no está en Canvas)
          */
         // *** COMENTARIOS CLAROS: PEGA AQUÍ TU CONFIGURACIÓN REAL DE FIREBASE ***
-        const LOCAL_FIREBASE_CONFIG = { // <<<< CORRECCIÓN: El nombre de la variable se corrige a LOCAL_FIREBASE_CONFIG
-            apiKey: "AIzaSyAraXSa95EcF2zqsk-ZK9uVlZQ05VPu-Vk", // <--- DEBES PEGAR AQUÍ TU CLAVE REAL
+        const LOCAL_FIREBASE_CONFIG = {
+            // Asegúrate de que esta sea tu clave REAL
+            apiKey: "AIzaSyAraXSa95EcF2zqsk-ZK9uVlZQ05VPu-Vk", 
             authDomain: "learning-together-aj.firebaseapp.com",
             projectId: "learning-together-aj",
             storageBucket: "learning-together-aj.firebasestorage.app",
             messagingSenderId: "1005231459765",
-            appId: "1:1005231459765:web:5944be8ee172cd6b681dfc"
+            // COMENTARIO CLARO: USAR EL MISMO PROJECTID PARA LA COMPATIBILIDAD DE RUTAS EN ENTORNO LOCAL
+            appId: "learning-together-aj" 
         }; 
 
         /**
          * PASO 1: Configuración e Inicialización de Firebase
          */
         
-        // 1. Determinar la configuración a usar: Canvas (con variables globales) o Local (con LOCAL_FIREBASE_CONFIG)
         let FIREBASE_CONFIG_TO_USE = {};
         let isRunningInCanvas = typeof __firebase_config !== 'undefined';
 
         if (isRunningInCanvas) {
             FIREBASE_CONFIG_TO_USE = JSON.parse(__firebase_config);
         } else {
-            console.warn("[FIREBASE] Usando configuración LOCAL. ¡Asegúrate de actualizar LOCAL_FIREBASE_CONFIG!");
-            FIREBASE_CONFIG_TO_USE = LOCAL_FIREBASE_CONFIG; // <<<< CORRECCIÓN: Ahora usa la constante con tus credenciales
+            console.warn("[FIREBASE] Usando configuración LOCAL.");
+            FIREBASE_CONFIG_TO_USE = LOCAL_FIREBASE_CONFIG;
         }
 
-        // 2. Establecer IDs (el appId es el ID del Canvas, si no existe, usamos un ID genérico)
         const localProjectId = FIREBASE_CONFIG_TO_USE.projectId;
         const appId = isRunningInCanvas ? __app_id : localProjectId;
         const initialAuthToken = isRunningInCanvas ? __initial_auth_token : null;
         
-        // 3. Inicializar Firebase de forma segura
         let app = null;
         let auth = null;
         let db = null;
         let initializationError = false;
 
-        // Comprobamos si tenemos una configuración válida (al menos el projectId que no sea el placeholder)
         if (FIREBASE_CONFIG_TO_USE && FIREBASE_CONFIG_TO_USE.projectId && FIREBASE_CONFIG_TO_USE.projectId !== "TU_PROJECT_ID") {
             try {
                 app = initializeApp(FIREBASE_CONFIG_TO_USE);
@@ -587,11 +586,11 @@
                 setLogLevel('debug'); 
                 console.log("[FIREBASE] Inicialización de App y DB exitosa.");
             } catch(e) {
-                console.error("[FIREBASE FATAL] Error al inicializar Firebase con la configuración proporcionada. Revisa tus credenciales.", e);
+                console.error("[FIREBASE FATAL] Error al inicializar Firebase. Revisa tus credenciales.", e);
                 initializationError = true;
             }
         } else if (!isRunningInCanvas) {
-            console.error("[FIREBASE FATAL] No se pudo inicializar Firebase. Debes actualizar la variable LOCAL_FIREBASE_CONFIG con tus credenciales. La funcionalidad de DB está deshabilitada.");
+            console.error("[FIREBASE FATAL] No se pudo inicializar Firebase. La funcionalidad de DB está deshabilitada.");
             initializationError = true;
         }
 
@@ -601,7 +600,6 @@
 
         async function authenticateUser() {
             if (initializationError) {
-                // Si hubo un error en la inicialización, no intentar autenticar.
                 isAuthReady = true;
                 return;
             }
@@ -611,13 +609,28 @@
                     await signInWithCustomToken(auth, initialAuthToken);
                     console.log("[AUTH] Sesión iniciada con token personalizado.");
                 } else {
-                    await signInAnonymously(auth);
+                    // CRÍTICO: Forzar la autenticación anónima para obtener el UID
+                    await signInAnonymously(auth); 
                     console.log("[AUTH] Sesión iniciada anónimamente.");
                 }
             } catch (error) {
                 console.error("[AUTH ERROR] Error durante la autenticación:", error);
-                // Si la autenticación falla, asumimos que no hay base de datos.
                 isAuthReady = true; 
+            }
+        }
+        
+        // Función de limpieza de la sesión para resolver conflictos de permisos antiguos
+        async function forceLogoutAndReset() {
+            try {
+                if (auth) {
+                    await signOut(auth);
+                    console.log("[CLEANUP] Sesión de usuario anónimo cerrada forzadamente.");
+                }
+                localStorage.clear(); 
+                sessionStorage.clear();
+                window.location.reload(); 
+            } catch (error) {
+                console.error("[CLEANUP ERROR] Error al cerrar sesión:", error);
             }
         }
         
@@ -626,13 +639,15 @@
             const button = document.getElementById('registerButton');
             const modal = document.getElementById('registerModal');
             
+            if (!button) return;
+            
             if (isRegistered) {
                 // Si el usuario ya se registró:
                 button.textContent = '✅ Ya Registrado';
-                button.classList.add('btn-registered'); // Clase CSS especial
+                button.classList.add('btn-registered'); 
                 button.onclick = () => showNotification('¡Ya te has registrado! Bienvenido de vuelta.', 'info');
-                // Ocultamos el modal de registro ya que no es necesario
-                if (modal) modal.remove(); 
+                // Esto puede causar problemas si se llama modal.remove()
+                if (modal) modal.style.display = 'none';
                 console.log("[UX] Botón de registro actualizado: Ya Registrado.");
             } else {
                 // Si el usuario NO se ha registrado:
@@ -644,29 +659,21 @@
         }
 
         // ----------------------------------------------------------------------
-        // ** PARTES 3 & 4: Lógica de Lectura en Tiempo Real y Dashboard **
+        // ** Lógica de Lectura en Tiempo Real y Dashboard **
         // ----------------------------------------------------------------------
         
-        /**
-         * 🔄 Actualiza el dashboard del usuario con los datos de Firebase.
-         * @param {number} appointmentCount - Número total de citas agendadas.
-         */
         function updateDashboard(appointmentCount) {
             const dashboard = document.getElementById('user-dashboard');
             const pointsEl = document.getElementById('dashboard-points');
             const appointmentsEl = document.getElementById('dashboard-appointments');
             
-            // Lógica de Gamificación: Puntos (Simulación)
-            // Asignamos 10 puntos por cada cita agendada
             const totalPoints = appointmentCount * 10; 
 
             if (dashboard) {
-                // Si el usuario está autenticado, mostramos el dashboard
                 dashboard.classList.remove('hidden');
                 pointsEl.textContent = totalPoints;
                 appointmentsEl.textContent = appointmentCount;
                 
-                // Lógica de niveles (Simulación):
                 let levelMessage = '';
                 if (totalPoints >= 30) {
                     levelMessage = '¡Gran Colaborador! Eres Nivel Experto. 🚀';
@@ -678,44 +685,38 @@
             }
         }
         
-        /**
-         * 🔄 Actualiza el dashboard multimedia con datos simulados.
-         * @param {string} videoStatus - Estado del último video generado.
-         */
         function updateMultimediaDashboard(videoStatus) {
             const infografiaStatus = document.getElementById('infografia-status');
             const clipsTotal = document.getElementById('clips-total');
             const lastVideoStatus = document.getElementById('last-video-status');
             
-            // Simulación de datos de progreso
-            const clips = 5; // Simulación: 5 clips generados automáticamente
+            const clips = 5; 
             
-            infografiaStatus.textContent = 'Generada (Ver Aquí)';
-            infografiaStatus.classList.remove('text-gray-500');
-            infografiaStatus.classList.add('text-green-600', 'font-semibold');
+            if (infografiaStatus) {
+                infografiaStatus.textContent = 'Generada (Ver Aquí)';
+                infografiaStatus.classList.remove('text-gray-500');
+                infografiaStatus.classList.add('text-green-600', 'font-semibold');
+            }
             
-            clipsTotal.textContent = `${clips} clips`;
+            if (clipsTotal) clipsTotal.textContent = `${clips} clips`;
             
-            if (videoStatus) {
+            if (lastVideoStatus && videoStatus) {
                  lastVideoStatus.textContent = videoStatus;
                  lastVideoStatus.classList.add('text-pink-600', 'font-semibold');
             }
         }
         
-        /**
-         * 🔄 Renderiza los mensajes del foro.
-         * @param {Array<Object>} posts - Lista de documentos de posts.
-         */
         function renderForumPosts(posts) {
             const container = document.getElementById('forum-posts');
-            container.innerHTML = ''; // Limpiar mensajes anteriores
+            if (!container) return;
+            
+            container.innerHTML = ''; 
             
             if (posts.length === 0) {
                 container.innerHTML = '<p class="text-center text-gray-400 mt-16">Sé el primero en publicar una pregunta o un comentario.</p>';
                 return;
             }
 
-            // Ordenar por fecha (más nuevo primero) antes de renderizar (ya que el query lo hace, esto es por si acaso)
             posts.sort((a, b) => b.timestamp - a.timestamp); 
             
             posts.forEach(post => {
@@ -734,25 +735,21 @@
                 container.appendChild(postDiv);
             });
             
-            // Desplazar al final para ver el mensaje más reciente
             container.scrollTop = container.scrollHeight; 
         }
 
-        /**
-         * 🎧 Configura los listeners de datos para el usuario actual.
-         */
         function setupDataListeners() {
             if (initializationError || !db || !userId) {
                  console.warn("[FIRESTORE] Listener de datos deshabilitado. Revisa la configuración de Firebase.");
-                 document.getElementById('forum-posts').innerHTML = '<p class="text-center text-red-500 mt-16">El foro está deshabilitado. Error de conexión con Firebase.</p>';
+                 const forumEl = document.getElementById('forum-posts');
+                 if (forumEl) forumEl.innerHTML = '<p class="text-center text-red-500 mt-16">El foro está deshabilitado. Error de conexión con Firebase.</p>';
                 return;
             }
             
             const currentUserId = userId;
             const currentAppId = appId;
             
-            // Listener 1: Registros (Para actualizar el botón de registro)
-            // COMENTARIOS CLAROS: Usamos una subcolección privada 'registrations' para cada usuario
+            // Listener 1: Registros 
             const regPath = `artifacts/${currentAppId}/users/${currentUserId}/registrations`;
             onSnapshot(collection(db, regPath), (snapshot) => {
                 const registrationsCount = snapshot.docs.length; 
@@ -762,8 +759,7 @@
                 console.error("[FIRESTORE ERROR] Error en registrations listener:", error);
             });
             
-            // Listener 2: Citas (Para actualizar el dashboard de Gamificación)
-            // COMENTARIOS CLAROS: Usamos una subcolección privada 'appointments' para cada usuario
+            // Listener 2: Citas
             const apptPath = `artifacts/${currentAppId}/users/${currentUserId}/appointments`;
             onSnapshot(collection(db, apptPath), (snapshot) => {
                 const appointmentCount = snapshot.docs.length;
@@ -773,12 +769,8 @@
                 console.error("[FIRESTORE ERROR] Error en appointments listener:", error);
             });
             
-            // Listener 3 (NUEVO): Foro Global (Colección Pública)
-            // COMENTARIOS CLAROS: Usamos una colección pública 'forum_posts'
+            // Listener 3: Foro Global 
             const forumPath = `artifacts/${currentAppId}/public/data/forum_posts`;
-            
-            // Creamos un Query para ordenar los posts por fecha (descendente)
-            // NOTA: 'timestamp' es el campo que se guarda en el addDoc (ver submitForumPost)
             const forumQuery = query(collection(db, forumPath), orderBy('timestamp', 'desc'), limit(50));
             
             onSnapshot(forumQuery, (snapshot) => {
@@ -786,30 +778,28 @@
                 snapshot.forEach(doc => {
                     posts.push({ id: doc.id, ...doc.data() });
                 });
-                renderForumPosts(posts.reverse()); // Invertir para mostrar el más nuevo al final de la ventana
+                renderForumPosts(posts.reverse()); 
                 console.log(`[FIRESTORE] Forum Posts: ${posts.length} documents.`);
             }, (error) => {
                 console.error("[FIRESTORE ERROR] Error en forum listener:", error);
-                document.getElementById('forum-posts').innerHTML = '<p class="text-center text-red-500 mt-16">Error al cargar el foro. Verifica las reglas de seguridad de Firebase.</p>';
+                const forumEl = document.getElementById('forum-posts');
+                if (forumEl) forumEl.innerHTML = '<p class="text-center text-red-500 mt-16">Error al cargar el foro. Verifica las reglas de seguridad de Firebase.</p>';
             });
             
-            // Simulación de Dashboard Multimedia: Actualizar al inicio
             updateMultimediaDashboard(null);
         }
         
-        // Listener de Autenticación (Se asegura de que setupDataListeners se llame con el userId correcto)
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 userId = user.uid;
                 console.log(`[AUTH] Usuario autenticado. UID: ${userId}`);
-                
                 setupDataListeners();
             } else {
-                // Generar un UID temporal para usuarios no autenticados (usado en entorno local sin token)
                 userId = crypto.randomUUID(); 
                 console.log("[AUTH] Usuario desautenticado/Anónimo. UID temporal:", userId);
                 updateRegistrationButton(false); 
-                document.getElementById('user-dashboard').classList.add('hidden'); 
+                const dashboard = document.getElementById('user-dashboard');
+                if (dashboard) dashboard.classList.add('hidden'); 
             }
             isAuthReady = true;
             
@@ -822,41 +812,40 @@
                     userIdDisplay.className = 'text-xs mt-2 text-gray-500';
                     footer.prepend(userIdDisplay);
                 }
-                // COMENTARIOS CLAROS: Mostrar el ID completo es obligatorio para depuración y multi-usuario
                 userIdDisplay.textContent = `ID de Usuario (UID): ${userId}`;
             }
         });
 
         authenticateUser();
 
-        // 🚨 CORRECCIÓN: Exportar funciones para que el HTML pueda acceder a ellas.
+        // Exportaciones necesarias para el HTML
         window.db = db; 
         window.getUserId = () => userId; 
         window.getAppId = () => appId; 
         window.isAuthReady = () => isAuthReady; 
-        
-        // ** EXPORTACIÓN DE FUNCIONES FALTANTES **
         window.generateVideo = generateVideo;
         window.submitForumPost = submitForumPost;
-        window.showNotification = showNotification; // Asegurar que el HTML pueda llamar a las notificaciones
+        window.showNotification = showNotification; 
         window.openModal = openModal;
         window.closeModal = closeModal;
-        window.openConfirmationModal = openConfirmationModal; // Necesaria para el formulario de cita
-        window.handleFormSubmit = handleFormSubmit; // Necesaria para el registro y cita
+        window.openConfirmationModal = openConfirmationModal; 
+        window.handleFormSubmit = handleFormSubmit; 
         window.sendMessage = sendMessage;
         window.toggleVoiceInput = toggleVoiceInput;
+        window.forceLogoutAndReset = forceLogoutAndReset; // ¡CRÍTICO PARA LA PRUEBA!
         
-        // --- COMIENZA LA LÓGICA JAVASCRIPT COMÚN ---
+        // --- COMIENZA LA LÓGICA JAVASCRIPT COMÚN (MODALS, FORMS, ETC.) ---
         
         const formToSubmit = { id: null };
 
-        // Función para mostrar el modal genérico de notificación (Reemplaza alert())
         function showNotification(message, type = 'success') {
             const modal = document.getElementById('notificationModal');
             const icon = document.getElementById('notification-icon');
             const title = document.getElementById('notification-title');
             const messageEl = document.getElementById('notification-message');
             
+            if (!modal) return; 
+
             icon.className = ''; 
 
             switch (type) {
@@ -891,7 +880,6 @@
             openModal('notificationModal');
         }
 
-        // Función para abrir cualquier modal
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
@@ -900,9 +888,7 @@
             }
         }
 
-        // Función para cerrar cualquier modal
         function closeModal(event, modalId) {
-            // CORRECCIÓN CRÍTICA: Se corrige la lógica para cerrar el modal correctamente.
             if (!event || (event.target && event.target.id === modalId)) { 
                 const modal = document.getElementById(modalId);
                 if (modal) {
@@ -912,19 +898,16 @@
             }
         }
 
-        // Función para abrir el modal de confirmación (Reemplaza confirm())
         function openConfirmationModal(formId) {
             const form = document.getElementById(formId);
             const emailInput = form.querySelector('input[type="email"]');
             
-            // Validar email antes de confirmar
             if (!validateEmail(emailInput.value)) {
                 showNotification('Por favor, introduce un correo electrónico válido antes de confirmar.', 'error');
                 emailInput.focus();
                 return;
             }
 
-            // Guardar el formulario para el envío posterior
             formToSubmit.id = formId; 
             
             const confirmModal = document.getElementById('confirmModal');
@@ -933,36 +916,41 @@
 
             confirmMessage.textContent = `Estás a punto de confirmar tu cita de asesoría. ¿Deseas continuar con el envío de tus datos?`;
             
-            // Asignar el evento al botón de confirmación
             confirmButton.onclick = function() {
                 closeModal(null, 'confirmModal');
-                // Llamar a la función de envío de formulario real
                 document.getElementById(formToSubmit.id).dispatchEvent(new Event('submit', { cancelable: true }));
             };
 
             openModal('confirmModal');
         }
 
-        // Función de Validación de Email
         function validateEmail(email) {
             const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
             return re.test(String(email).toLowerCase());
         }
 
-        // Función de Envío de Formulario (Usa addDoc de la Parte 2)
         async function handleFormSubmit(event, formType, modalId) {
             event.preventDefault();
 
             // 1. Verificación Inicial de Autenticación
-            if (!window.isAuthReady() || !window.getUserId()) {
-                showNotification('El sistema de base de datos aún se está cargando. Por favor, espera un momento y vuelve a intentarlo. (Revisa tu configuración local de Firebase si usas VS Code)', 'warning');
+            
+            // COMENTARIO CLARO: Esperamos hasta que la autenticación anónima se complete.
+            let attempts = 0;
+            const MAX_ATTEMPTS = 5;
+            while (!window.isAuthReady() && attempts < MAX_ATTEMPTS) {
+                 console.log("[AUTH WAIT] Esperando que la autenticación se complete...");
+                 await new Promise(resolve => setTimeout(resolve, 300)); // Espera 300ms
+                 attempts++;
+            }
+            
+            // Verificación final de conexión y autenticación
+            if (initializationError || !db) {
+                showNotification('Error de conexión: Firebase no está inicializado. Revisa las credenciales de LOCAL_FIREBASE_CONFIG.', 'error');
                 return;
             }
-
-            // 1.1 Verificación de Conexión a DB
-            if (initializationError || !db) {
-                showNotification('¡La base de datos está desconectada! Revisa si actualizaste la variable LOCAL_FIREBASE_CONFIG en el código.', 'error');
-                return;
+            if (!window.getUserId()) {
+                 showNotification('Error de autenticación. No se pudo obtener el ID de usuario. Por favor, recarga la página.', 'error');
+                 return;
             }
 
             const currentUserId = window.getUserId();
@@ -970,11 +958,19 @@
             const form = event.target;
             
             // 2. Recolección de Datos
-            const name = form.querySelector('input[name="name"]').value;
-            const email = form.querySelector('input[name="email"]').value;
+            const nameInput = form.querySelector('input[name="name"]');
+            const emailInput = form.querySelector('input[name="email"]');
+
+            if (!nameInput || !emailInput) {
+                showNotification('Error interno: El formulario no tiene campos de nombre/email.', 'error');
+                return;
+            }
+
+            const name = nameInput.value;
+            const email = emailInput.value;
             let topic = '';
 
-            // Validación de Email (la misma que tenías, pero ahora clave para la BD)
+            // Validación de Email 
             if (!validateEmail(email)) {
                 showNotification('Por favor, introduce un correo electrónico válido antes de enviar.', 'error');
                 return;
@@ -992,17 +988,18 @@
                 collectionName = 'registrations'; 
             } else if (formType === 'Cita') {
                 collectionName = 'appointments'; 
-                topic = form.querySelector('select[name="topic"]').value;
+                const topicSelect = form.querySelector('select[name="topic"]');
+                topic = topicSelect ? topicSelect.value : 'N/A';
                 dataToSave.topic = topic;
                 dataToSave.status = 'Pending (Via Make Simulation)';
             } else {
                 console.error(`Tipo de formulario desconocido: ${formType}`);
+                showNotification('Error interno: Tipo de formulario desconocido.', 'error');
                 return;
             }
 
             // 3. Creación de la Ruta y Guardado en Firestore
             try {
-                // **Ruta Segura y Privada en Firestore:** // /artifacts/{appId}/users/{userId}/[collectionName]
                 const collectionPath = `artifacts/${currentAppId}/users/${currentUserId}/${collectionName}`;
                 
                 const collectionRef = collection(db, collectionPath);
@@ -1014,13 +1011,22 @@
                 // 4. Notificación de Éxito y Limpieza
                 showNotification(`¡${formType} enviado y guardado! Tus datos ya están seguros.`, 'success');
                 
-                document.getElementById(modalId).classList.add('hidden'); 
-                document.getElementById(modalId).classList.remove('flex');
-                form.reset(); // Intenta el reset
+                const modalElement = document.getElementById(modalId);
+                if (modalElement) {
+                    modalElement.classList.add('hidden'); 
+                    modalElement.classList.remove('flex');
+                }
+                form.reset(); 
 
             } catch (e) {
-                console.error("[FIRESTORE ERROR] Error al guardar el documento: ", e);
-                showNotification(`Hubo un error al guardar tus datos. (Verifica las reglas de seguridad de Firebase)`, 'error');
+                console.error("[FIRESTORE ERROR] Falló la operación de guardado:", e);
+                // Si el error es de seguridad (PERMISSION_DENIED), mostramos el mensaje de reglas
+                if (e.code === 'permission-denied') {
+                     showNotification(`Hubo un error al guardar tus datos. (Verifica las reglas de seguridad de Firebase)`, 'error');
+                } else {
+                     // Error genérico de conexión o escritura
+                     showNotification(`Hubo un error inesperado al guardar los datos: ${e.message}`, 'error');
+                }
             }
         }
         
@@ -1039,7 +1045,7 @@
             }
             
             if (!window.isAuthReady() || !window.getUserId()) {
-                showNotification('La autenticación se está cargando. Por favor, espera un momento antes de publicar. (Revisa tu configuración local de Firebase si usas VS Code)', 'warning');
+                showNotification('La autenticación se está cargando. Por favor, espera un momento antes de publicar.', 'warning');
                 return;
             }
             
@@ -1292,6 +1298,7 @@
 
         // URL del Webhook de Make (Punto Final/Endpoint)
         // *** COMENTARIOS CLAROS: PEGA LA URL REAL DE TU SCENARIO DE MAKE AQUÍ ***
+        // Por ahora, usamos un placeholder.
         const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/9dv6cpiio76f9epg5q85coh7malkn6dp'; 
         
         // Función de Validación de Email (para usar en la validación de Make)
@@ -1320,11 +1327,11 @@
                 formMessage.style.color = '#333';
 
 
-                // ** COMENTARIOS CLAROS: Si el usuario NO ha pegado su URL real, ejecutamos la SIMULACIÓN. **
-                if (MAKE_WEBHOOK_URL.includes('PEGA_AQUI_LA_URL_DE_TU_WEBHOOK_DE_MAKE')) {
-                    // Si el usuario olvidó pegar la URL, mostramos un mensaje de advertencia y simulamos el éxito.
+                // ** COMENTARIOS CLAROS: Verifica que la URL del Webhook esté pegada aquí, no la de tu proxy de chat. **
+                if (MAKE_WEBHOOK_URL === 'https://hook.us2.make.com/9dv6cpiio76f9epg5q85coh7malkn6dp') {
+                    // Simulación de éxito si el usuario olvidó la URL
                     setTimeout(() => {
-                        formMessage.textContent = '⚠️ ¡AVISO! La URL de Make no está actualizada. El proceso real se SIMULA como exitoso.';
+                        formMessage.textContent = '⚠️ ¡AVISO! Usando URL de Make de prueba. El proceso real se simula como exitoso.';
                         formMessage.style.backgroundColor = '#fff3cd'; // Amarillo claro
                         formMessage.style.color = '#856404'; // Texto marrón
                         contactForm.reset();
@@ -1364,7 +1371,6 @@
             });
         }
         // --- FIN DE LA LÓGICA MAKE ---
-
     </script>
 </body>
 </html>
